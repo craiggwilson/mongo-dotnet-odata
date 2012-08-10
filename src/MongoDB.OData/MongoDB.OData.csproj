@@ -63,6 +63,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TypedMongoDataServiceUpdateProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="TypedMongoResourcePropertyAnnotation.cs" />
     <Compile Include="TypedMongoResourceSetAnnotation.cs" />
     <Compile Include="TypedMongoDataServiceMetadataProvider.cs" />
