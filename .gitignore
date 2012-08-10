@@ -1,0 +1,12 @@
+# Visual Studio
+bin
+obj
+*.user
+*.suo
+*.cache
+
+# Nuget
+packages
+
+# NCrunch
+*.ncrunch*
