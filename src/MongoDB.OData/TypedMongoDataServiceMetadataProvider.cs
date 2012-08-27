@@ -13,6 +13,7 @@ namespace MongoDB.OData
     {
         private readonly Dictionary<string, ResourceSet> _sets;
         private readonly Dictionary<string, ResourceType> _types;
+        private readonly Dictionary<string, ResourceType> _qualifiedTypes;
 
         public string ContainerName { get; private set; }
 
@@ -40,6 +41,7 @@ namespace MongoDB.OData
 
             _sets = resourceSets;
             _types = resourceTypes;
+            _qualifiedTypes = _types.ToDictionary(x => x.Value.FullName, x => x.Value);
         }
 
         public IEnumerable<ResourceType> GetDerivedTypes(ResourceType resourceType)
@@ -48,7 +50,13 @@ namespace MongoDB.OData
             if (annotation == null)
                 return Enumerable.Empty<ResourceType>();
 
-            return annotation.DerivedTypes;
+            List<ResourceType> derivedTypes = new List<ResourceType>(annotation.DerivedTypes);
+            foreach (var derivedType in annotation.DerivedTypes)
+            {
+                derivedTypes.AddRange(GetDerivedTypes(derivedType));
+            }
+
+            return derivedTypes;
         }
 
         public ResourceAssociationSet GetResourceAssociationSet(ResourceSet resourceSet, ResourceType resourceType, ResourceProperty resourceProperty)
@@ -72,7 +80,7 @@ namespace MongoDB.OData
 
         public bool TryResolveResourceType(string name, out ResourceType resourceType)
         {
-            return _types.TryGetValue(name, out resourceType);
+            return _types.TryGetValue(name, out resourceType) || _qualifiedTypes.TryGetValue(name, out resourceType);
         }
 
         public bool TryResolveServiceOperation(string name, out ServiceOperation serviceOperation)

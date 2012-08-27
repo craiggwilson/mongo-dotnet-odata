@@ -6,27 +6,26 @@ using System.Linq;
 using System.ServiceModel.Web;
 using System.Web;
 using MongoDB.Driver;
-using MongoDB.OData.SampleModels;
+using MongoDB.OData.SampleModels.Blog;
 
 namespace MongoDB.OData.SampleHost
 {
-    public class Sample : TypedMongoDataService
+    public class BlogApi : TypedMongoDataService
     {
         // This method is called only once to initialize service-wide policies.
         public static void InitializeService(DataServiceConfiguration config)
         {
             TypedMongoDataService.Configure(config);
-
             config.SetEntitySetAccessRule("*", EntitySetRights.All);
             config.UseVerboseErrors = true;
         }
 
-        protected override void BuildMetadata(TypedMongoDataServiceMetadata metadata)
+        protected override void BuildMetadata(TypedMongoDataServiceMetadataBuilder builder)
         {
-            metadata.SetContainer("MongoDB.Samples", "Blog");
-            metadata.AddResourceSet<Blog>("Blogs", "odata", "blogs");
-            metadata.AddResourceSet<Post>("Posts", "odata", "posts");
-            metadata.AddResourceSet<User>("Users", "odata", "users");
+            builder.SetContainer("MongoDB.Samples", "BlogApi");
+            builder.AddResourceSet<Blog>("Blogs", "odata_blogs", "blogs");
+            builder.AddResourceSet<Post>("Posts", "odata_blogs", "posts");
+            builder.AddResourceSet<User>("Users", "odata_blogs", "users");
         }
 
         protected override MongoServer CreateDataSource()
@@ -34,9 +33,9 @@ namespace MongoDB.OData.SampleHost
             var server = MongoServer.Create();
 
             //create data if none exists...
-            var db = server.GetDatabase("odata");
+            var db = server.GetDatabase("odata_blogs");
             var userCollection = db.GetCollection<User>("users");
-            var blogCollection = db.GetCollection<Blog>("blogs");
+            var blogCollection = db.GetCollection<BlogApi>("blogs");
             var postsCollection = db.GetCollection<Post>("posts");
 
             if (userCollection.Count() > 0)

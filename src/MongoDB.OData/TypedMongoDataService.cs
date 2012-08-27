@@ -44,7 +44,7 @@ namespace MongoDB.OData
             //    {
             //        if (_metadataProvider == null)
             //        {
-                        var metadata = new TypedMongoDataServiceMetadata();
+                        var metadata = new TypedMongoDataServiceMetadataBuilder();
                         BuildMetadata(metadata);
                         _metadataProvider = metadata.CreateMetadataProvider();
             //        }
@@ -59,7 +59,7 @@ namespace MongoDB.OData
             return new TypedMongoDataServiceQueryProvider(GetMetadataProvider());
         }
 
-        protected abstract void BuildMetadata(TypedMongoDataServiceMetadata metadata);
+        protected abstract void BuildMetadata(TypedMongoDataServiceMetadataBuilder builder);
 
         protected abstract override MongoServer CreateDataSource();
     }

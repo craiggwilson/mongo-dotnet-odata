@@ -4,6 +4,7 @@ obj
 *.user
 *.suo
 *.cache
+TestResults
 
 # Nuget
 packages

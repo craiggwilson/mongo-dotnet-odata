@@ -1,17 +1,21 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData", "src\MongoDB.OData\MongoDB.OData.csproj", "{FE1AD69A-98AB-4F2D-88C9-B7B449191912}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.SampleHost", "src\MongoDB.OData.SampleHost\MongoDB.OData.SampleHost.csproj", "{D9B7A239-9F4E-4E55-838D-4766EBEA5672}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C6F8D4C8-3816-48F4-A278-88D6CF8776B7}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData", "src\MongoDB.OData\MongoDB.OData.csproj", "{FE1AD69A-98AB-4F2D-88C9-B7B449191912}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.SampleHost", "src\MongoDB.OData.SampleHost\MongoDB.OData.SampleHost.csproj", "{D9B7A239-9F4E-4E55-838D-4766EBEA5672}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.SampleModels", "src\MongoDB.OData.SampleModels\MongoDB.OData.SampleModels.csproj", "{59DA97A0-8CD9-461C-9EA5-1AE45D34A1A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.IntegrationTests", "src\MongoDB.OData.IntegrationTests\MongoDB.OData.IntegrationTests.csproj", "{628EAB24-C5B8-47C4-B634-EECA4089BDA4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.UnitTests", "src\MongoDB.OData.UnitTests\MongoDB.OData.UnitTests.csproj", "{079AA188-5BA0-437F-AAA2-3F4681393A15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +57,26 @@ Global
 		{59DA97A0-8CD9-461C-9EA5-1AE45D34A1A7}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{59DA97A0-8CD9-461C-9EA5-1AE45D34A1A7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{59DA97A0-8CD9-461C-9EA5-1AE45D34A1A7}.Release|x86.ActiveCfg = Release|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{628EAB24-C5B8-47C4-B634-EECA4089BDA4}.Release|x86.ActiveCfg = Release|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{079AA188-5BA0-437F-AAA2-3F4681393A15}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

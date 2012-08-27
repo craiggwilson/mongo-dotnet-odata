@@ -5,15 +5,13 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{FE1AD69A-98AB-4F2D-88C9-B7B449191912}</ProjectGuid>
+    <ProjectGuid>{079AA188-5BA0-437F-AAA2-3F4681393A15}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MongoDB.OData</RootNamespace>
-    <AssemblyName>MongoDB.OData</AssemblyName>
+    <RootNamespace>MongoDB.OData.UnitTests</RootNamespace>
+    <AssemblyName>MongoDB.OData.UnitTests</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FluentAssertions">
+      <HintPath>..\..\packages\FluentAssertions.1.7.1.1\Lib\net40\FluentAssertions.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Data.Edm, Version=5.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Microsoft.Data.Edm.5.0.1\lib\net40\Microsoft.Data.Edm.dll</HintPath>
@@ -55,6 +56,9 @@
     <Reference Include="MongoDB.Driver, Version=1.5.0.4566, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
       <HintPath>..\..\packages\mongocsharpdriver.1.5\lib\net35\MongoDB.Driver.dll</HintPath>
     </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.1\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Spatial, Version=5.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -68,14 +72,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TypedMongoResourcePropertyAnnotation.cs" />
-    <Compile Include="TypedMongoResourceSetAnnotation.cs" />
-    <Compile Include="TypedMongoDataServiceMetadataProvider.cs" />
-    <Compile Include="TypedMongoDataServiceQueryProvider.cs" />
+    <Compile Include="Specification.cs" />
+    <Compile Include="TypedMongoDataServiceMetadataTests\When_mapping_a_hierarchy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TypedMongoDataService.cs" />
-    <Compile Include="TypedMongoDataServiceMetadataBuilder.cs" />
-    <Compile Include="TypedMongoResourceTypeAnnotation.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MongoDB.OData\MongoDB.OData.csproj">
+      <Project>{FE1AD69A-98AB-4F2D-88C9-B7B449191912}</Project>
+      <Name>MongoDB.OData</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
