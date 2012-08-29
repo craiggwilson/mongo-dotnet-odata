@@ -7,21 +7,35 @@ using System.ServiceModel.Web;
 using System.Web;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using MongoDB.OData.SampleModels.HumanResources;
+using System.Data.Services.Providers;
 
 namespace MongoDB.OData.SampleHost
 {
-    public class HumanResourcesApi : TypedMongoDataService
+    [MongoDatabase("odata_hr")]
+    public class HumanResourceEntities
     {
-        // This method is called only once to initialize service-wide policies.
-        public static void InitializeService(DataServiceConfiguration config)
-        {
-            TypedMongoDataService.Configure(config);
-            config.SetEntitySetAccessRule("*", EntitySetRights.All);
-            config.UseVerboseErrors = true;
-        }
+        [MongoCollection("people")]
+        public MongoCollection<Person> People { get; set; }
 
-        protected override void BuildMetadata(TypedMongoDataServiceMetadataBuilder builder)
+        [WebGet]
+        public IQueryable<Employee> GetEmployeesOfManager(string managerId)
+        {
+            var manager = People.AsQueryable().OfType<Manager>().SingleOrDefault(m => m.Id == managerId);
+            if (manager == null)
+            {
+                throw new DataServiceException(404, string.Format("Manager with id {0} does not exist.", managerId));
+            }
+
+            var employeeIds = manager.Employees.Select(m => m.Id);
+            return People.AsQueryable().OfType<Employee>().Where(e => employeeIds.Contains(e.Id));
+        }
+    }
+
+    public class HumanResourcesApi : MongoDataService<HumanResourceEntities>
+    {
+        static HumanResourcesApi()
         {
             if (!BsonClassMap.IsClassMapRegistered(typeof(Person)))
             {
@@ -34,12 +48,17 @@ namespace MongoDB.OData.SampleHost
                     cm.AddKnownType(typeof(Contractor));
                 });
             }
-
-            builder.SetContainer("MongoDB.Samples", "HumanResources");
-            builder.AddResourceSet<Person>("People", "odata_hr", "people");
         }
 
-        protected override MongoServer CreateDataSource()
+        // This method is called only once to initialize service-wide policies.
+        public static void InitializeService(DataServiceConfiguration config)
+        {
+            Configure(config);
+            config.SetEntitySetAccessRule("*", EntitySetRights.All);
+            config.UseVerboseErrors = true;
+        }
+
+        protected override MongoServer CreateMongoServer()
         {
             var server = MongoServer.Create();
 

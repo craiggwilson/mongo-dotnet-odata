@@ -10,25 +10,35 @@ using MongoDB.OData.SampleModels.Blog;
 
 namespace MongoDB.OData.SampleHost
 {
-    public class BlogApi : TypedMongoDataService
+    [MongoDatabase("odata_blogs")]
+    public class BlogEntities
+    {
+        [MongoCollection("blogs")]
+        public MongoCollection<Blog> Blogs { get; set; }
+
+        [MongoCollection("posts")]
+        public MongoCollection<Post> Posts { get; set; }
+
+        [MongoCollection("users")]
+        public MongoCollection<User> Users { get; set; }
+    }
+
+    public class BlogApi : MongoDataService<BlogEntities>
     {
         // This method is called only once to initialize service-wide policies.
         public static void InitializeService(DataServiceConfiguration config)
         {
-            TypedMongoDataService.Configure(config);
+            Configure(config);
             config.SetEntitySetAccessRule("*", EntitySetRights.All);
             config.UseVerboseErrors = true;
         }
 
-        protected override void BuildMetadata(TypedMongoDataServiceMetadataBuilder builder)
+        protected override BlogEntities CreateDataSource(MongoServer server)
         {
-            builder.SetContainer("MongoDB.Samples", "BlogApi");
-            builder.AddResourceSet<Blog>("Blogs", "odata_blogs", "blogs");
-            builder.AddResourceSet<Post>("Posts", "odata_blogs", "posts");
-            builder.AddResourceSet<User>("Users", "odata_blogs", "users");
+            return new BlogEntities();
         }
 
-        protected override MongoServer CreateDataSource()
+        protected override MongoServer CreateMongoServer()
         {
             var server = MongoServer.Create();
 
@@ -39,7 +49,9 @@ namespace MongoDB.OData.SampleHost
             var postsCollection = db.GetCollection<Post>("posts");
 
             if (userCollection.Count() > 0)
+            {
                 return server;
+            }
 
             var user1 = new User
             {

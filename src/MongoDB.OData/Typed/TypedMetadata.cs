@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data.Services.Providers;
-using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
-using MongoDB.Bson;
+using System.Linq;
 
-namespace MongoDB.OData
+namespace MongoDB.OData.Typed
 {
-    internal class TypedMongoDataServiceMetadataProvider : IDataServiceMetadataProvider
+    internal class TypedMetadata : IDataServiceMetadataProvider
     {
         private readonly Dictionary<string, ResourceSet> _sets;
         private readonly Dictionary<string, ResourceType> _types;
         private readonly Dictionary<string, ResourceType> _qualifiedTypes;
+        private readonly Dictionary<ResourceType, List<ResourceType>> _derivedTypes;
 
         public string ContainerName { get; private set; }
 
@@ -34,29 +31,44 @@ namespace MongoDB.OData
             get { return _types.Values; }
         }
 
-        public TypedMongoDataServiceMetadataProvider(string containerNamespace, string containerName, Dictionary<string, ResourceSet> resourceSets, Dictionary<string, ResourceType> resourceTypes)
+        public TypedMetadata(string containerNamespace, string containerName, IEnumerable<ResourceSet> resourceSets, IEnumerable<ResourceType> resourceTypes)
         {
             ContainerNamespace = containerNamespace ?? "MongoDB";
             ContainerName = containerName ?? "Database";
 
-            _sets = resourceSets;
-            _types = resourceTypes;
-            _qualifiedTypes = _types.ToDictionary(x => x.Value.FullName, x => x.Value);
+            _sets = resourceSets.ToDictionary(x => x.Name, x => x);
+            _types = resourceTypes.ToDictionary(x => x.Name, x => x);
+            _qualifiedTypes = resourceTypes.ToDictionary(x => x.FullName, x => x);
+            _derivedTypes = new Dictionary<ResourceType, List<ResourceType>>();
+
+            foreach (var type in resourceTypes.Where(t => t.BaseType != null))
+            {
+                List<ResourceType> derivedTypes;
+                if (!_derivedTypes.TryGetValue(type.BaseType, out derivedTypes))
+                {
+                    _derivedTypes[type.BaseType] = derivedTypes = new List<ResourceType>();
+                }
+
+                derivedTypes.Add(type);
+            }
         }
 
         public IEnumerable<ResourceType> GetDerivedTypes(ResourceType resourceType)
         {
-            var annotation = resourceType.CustomState as TypedMongoResourceTypeAnnotation;
-            if (annotation == null)
-                return Enumerable.Empty<ResourceType>();
-
-            List<ResourceType> derivedTypes = new List<ResourceType>(annotation.DerivedTypes);
-            foreach (var derivedType in annotation.DerivedTypes)
+            List<ResourceType> derivedTypes;
+            if (!_derivedTypes.TryGetValue(resourceType, out derivedTypes))
             {
-                derivedTypes.AddRange(GetDerivedTypes(derivedType));
+                return Enumerable.Empty<ResourceType>();
             }
 
-            return derivedTypes;
+            List<ResourceType> result = new List<ResourceType>(derivedTypes);
+
+            foreach (var derivedType in derivedTypes)
+            {
+                result.AddRange(GetDerivedTypes(derivedType));
+            }
+
+            return result;
         }
 
         public ResourceAssociationSet GetResourceAssociationSet(ResourceSet resourceSet, ResourceType resourceType, ResourceProperty resourceProperty)
@@ -66,11 +78,13 @@ namespace MongoDB.OData
 
         public bool HasDerivedTypes(ResourceType resourceType)
         {
-            var annotation = resourceType.CustomState as TypedMongoResourceTypeAnnotation;
-            if (annotation == null)
-                return false;
+            List<ResourceType> derivedTypes;
+            if (_derivedTypes.TryGetValue(resourceType, out derivedTypes))
+            {
+                return derivedTypes != null && derivedTypes.Count > 0;
+            }
 
-            return annotation.HasDerivedTypes;
+            return false;
         }
 
         public bool TryResolveResourceSet(string name, out ResourceSet resourceSet)

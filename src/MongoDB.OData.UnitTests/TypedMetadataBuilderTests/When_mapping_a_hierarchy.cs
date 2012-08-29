@@ -1,43 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using FluentAssertions;
 using MongoDB.Bson.Serialization.Attributes;
-
+using MongoDB.Driver;
+using MongoDB.OData.Typed;
 using NUnit.Framework;
-using FluentAssertions;
+using System;
+using System.Collections.Generic;
 using System.Data.Services.Providers;
-using MongoDB.Bson.Serialization;
+using System.Linq;
 
 namespace MongoDB.OData.UnitTests
 {
     [TestFixture]
-    public class When_mapping_a_hierarchy : Specification<TypedMongoDataServiceMetadataBuilder>
+    internal class When_mapping_a_hierarchy : Specification<TypedMetadataBuilder>
     {
-        private TypedMongoDataServiceMetadataProvider _provider;
+        private IDataServiceMetadataProvider _metadata;
 
-        protected override TypedMongoDataServiceMetadataBuilder EstablishContext()
+        protected override TypedMetadataBuilder EstablishContext()
         {
-            return new TypedMongoDataServiceMetadataBuilder();
+            return new TypedMetadataBuilder(typeof(Hierarchy));
         }
 
         protected override void Because()
         {
-            Subject.AddResourceSet<Person>("People", "hr", "people");
-            _provider = Subject.CreateMetadataProvider();
+            _metadata = Subject.BuildMetadata();
         }
 
         [Test]
         public void should_add_only_1_resource_set()
         {
-            _provider.ResourceSets.Count().Should().Be(1);
+            _metadata.ResourceSets.Count().Should().Be(1);
         }
 
         [Test]
         public void should_map_the_resource_set()
         {
-            var set = _provider.ResourceSets.Single();
+            var set = _metadata.ResourceSets.Single();
             set.ResourceType.InstanceType.Should().Be(typeof(Person));
             set.ResourceType.IsAbstract.Should().BeTrue();
         }
@@ -45,40 +42,40 @@ namespace MongoDB.OData.UnitTests
         [Test]
         public void should_recognize_the_derived_types()
         {
-            var personType = _provider.Types.Single(x => x.InstanceType == typeof(Person));
-            _provider.HasDerivedTypes(personType).Should().BeTrue();
-            var derivedTypes = _provider.GetDerivedTypes(personType);
+            var personType = _metadata.Types.Single(x => x.InstanceType == typeof(Person));
+            _metadata.HasDerivedTypes(personType).Should().BeTrue();
+            var derivedTypes = _metadata.GetDerivedTypes(personType);
             derivedTypes.Count().Should().Be(4);
 
             var spouseType = derivedTypes.Single(x => x.InstanceType == typeof(Spouse));
-            _provider.HasDerivedTypes(spouseType).Should().BeFalse();
+            _metadata.HasDerivedTypes(spouseType).Should().BeFalse();
 
             var employeeType = derivedTypes.Single(x => x.InstanceType == typeof(Employee));
-            _provider.HasDerivedTypes(employeeType).Should().BeTrue();
-            derivedTypes = _provider.GetDerivedTypes(employeeType);
+            _metadata.HasDerivedTypes(employeeType).Should().BeTrue();
+            derivedTypes = _metadata.GetDerivedTypes(employeeType);
             derivedTypes.Count().Should().Be(2);
 
             var managerType = derivedTypes.Single(x => x.InstanceType == typeof(Manager));
-            _provider.HasDerivedTypes(managerType).Should().BeFalse();
+            _metadata.HasDerivedTypes(managerType).Should().BeFalse();
 
             var contractorType = derivedTypes.Single(x => x.InstanceType == typeof(Contractor));
-            _provider.HasDerivedTypes(contractorType).Should().BeFalse();
+            _metadata.HasDerivedTypes(contractorType).Should().BeFalse();
 
-            var personRefType = _provider.Types.Single(x => x.InstanceType == typeof(PersonRef));
-            _provider.HasDerivedTypes(personRefType).Should().BeTrue();
-            derivedTypes = _provider.GetDerivedTypes(personRefType);
+            var personRefType = _metadata.Types.Single(x => x.InstanceType == typeof(PersonRef));
+            _metadata.HasDerivedTypes(personRefType).Should().BeTrue();
+            derivedTypes = _metadata.GetDerivedTypes(personRefType);
             derivedTypes.Count().Should().Be(1);
 
             var spouseRefType = derivedTypes.Single(x => x.InstanceType == typeof(SpouseRef));
-            _provider.HasDerivedTypes(spouseRefType).Should().BeFalse();
+            _metadata.HasDerivedTypes(spouseRefType).Should().BeFalse();
         }
 
         [Test]
         public void should_map_each_type_correctly()
         {
-            _provider.Types.Count().Should().Be(8);
+            _metadata.Types.Count().Should().Be(8);
 
-            var personType = _provider.Types.Single(x => x.InstanceType == typeof(Person));
+            var personType = _metadata.Types.Single(x => x.InstanceType == typeof(Person));
             personType.IsReadOnly.Should().BeTrue();
             personType.BaseType.Should().BeNull();
             personType.KeyProperties.Count.Should().Be(1);
@@ -88,7 +85,7 @@ namespace MongoDB.OData.UnitTests
             personProperties.Should().Contain(x => x.Name == "Id");
             personProperties.Should().Contain(x => x.Name == "Name");
 
-            var employeeType = _provider.Types.Single(x => x.InstanceType == typeof(Employee));
+            var employeeType = _metadata.Types.Single(x => x.InstanceType == typeof(Employee));
             employeeType.IsReadOnly.Should().BeTrue();
             employeeType.BaseType.Should().Be(personType);
             var employeeProperties = employeeType.PropertiesDeclaredOnThisType;
@@ -97,28 +94,28 @@ namespace MongoDB.OData.UnitTests
             employeeProperties.Should().Contain(x => x.Name == "Salary");
             employeeProperties.Should().Contain(x => x.Name == "Spouse");
 
-            var spouseType = _provider.Types.Single(x => x.InstanceType == typeof(Spouse));
+            var spouseType = _metadata.Types.Single(x => x.InstanceType == typeof(Spouse));
             spouseType.IsReadOnly.Should().BeTrue();
             spouseType.BaseType.Should().Be(personType);
             var spouseProperties = spouseType.PropertiesDeclaredOnThisType;
             spouseProperties.Count.Should().Be(1);
             spouseProperties.Should().Contain(x => x.Name == "SpousesId");
 
-            var managerType = _provider.Types.Single(x => x.InstanceType == typeof(Manager));
+            var managerType = _metadata.Types.Single(x => x.InstanceType == typeof(Manager));
             managerType.IsReadOnly.Should().BeTrue();
             managerType.BaseType.Should().Be(employeeType);
             var managerProperties = managerType.PropertiesDeclaredOnThisType;
             managerProperties.Count.Should().Be(1);
             managerProperties.Should().Contain(x => x.Name == "Employees");
 
-            var contractorType = _provider.Types.Single(x => x.InstanceType == typeof(Contractor));
+            var contractorType = _metadata.Types.Single(x => x.InstanceType == typeof(Contractor));
             contractorType.IsReadOnly.Should().BeTrue();
             contractorType.BaseType.Should().Be(employeeType);
             var contractorProperties = contractorType.PropertiesDeclaredOnThisType;
             contractorProperties.Count.Should().Be(1);
             contractorProperties.Should().Contain(x => x.Name == "Address");
 
-            var nameType = _provider.Types.Single(x => x.InstanceType == typeof(Name));
+            var nameType = _metadata.Types.Single(x => x.InstanceType == typeof(Name));
             nameType.IsReadOnly.Should().BeTrue();
             nameType.BaseType.Should().BeNull();
             nameType.KeyProperties.Count.Should().Be(0);
@@ -127,7 +124,7 @@ namespace MongoDB.OData.UnitTests
             nameProperties.Should().Contain(x => x.Name == "First");
             nameProperties.Should().Contain(x => x.Name == "Last");
 
-            var personRefType = _provider.Types.Single(x => x.InstanceType == typeof(PersonRef));
+            var personRefType = _metadata.Types.Single(x => x.InstanceType == typeof(PersonRef));
             personRefType.IsReadOnly.Should().BeTrue();
             personRefType.BaseType.Should().BeNull();
             personRefType.KeyProperties.Count.Should().Be(0);
@@ -136,12 +133,17 @@ namespace MongoDB.OData.UnitTests
             personRefProperties.Should().Contain(x => x.Name == "Id");
             personRefProperties.Should().Contain(x => x.Name == "Name");
 
-            var spouseRefType = _provider.Types.Single(x => x.InstanceType == typeof(SpouseRef));
+            var spouseRefType = _metadata.Types.Single(x => x.InstanceType == typeof(SpouseRef));
             spouseRefType.IsReadOnly.Should().BeTrue();
             spouseRefType.BaseType.Should().Be(personRefType);
             var spouseRefProperties = spouseRefType.PropertiesDeclaredOnThisType;
             spouseRefProperties.Count.Should().Be(1);
             spouseRefProperties.Should().Contain(x => x.Name == "MarriageDate");
+        }
+
+        private class Hierarchy
+        {
+            public MongoCollection<Person> People { get; set; }
         }
 
         [BsonKnownTypes(typeof(Employee), typeof(Spouse))]

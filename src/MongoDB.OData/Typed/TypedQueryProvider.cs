@@ -1,0 +1,57 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Services.Providers;
+using System.Linq;
+
+namespace MongoDB.OData.Typed
+{
+    internal class TypedQueryProvider : IDataServiceQueryProvider
+    {
+        private readonly TypedMetadata _metadata;
+
+        public TypedQueryProvider(TypedMetadata metadata)
+        {
+            _metadata = metadata;
+        }
+
+        public object CurrentDataSource { get; set; }
+
+        public bool IsNullPropagationRequired
+        {
+            get { return false; }
+        }
+
+        public object GetOpenPropertyValue(object target, string propertyName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<KeyValuePair<string, object>> GetOpenPropertyValues(object target)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object GetPropertyValue(object target, ResourceProperty resourceProperty)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryable GetQueryRootForResourceSet(ResourceSet resourceSet)
+        {
+            var annotation = (TypedResourceSetAnnotation)resourceSet.CustomState;
+            return annotation.Getter(CurrentDataSource);
+        }
+
+        public ResourceType GetResourceType(object target)
+        {
+            return _metadata.Types.Single(x => x.InstanceType == target.GetType());
+        }
+
+        public object InvokeServiceOperation(ServiceOperation serviceOperation, object[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+
+    }
+}

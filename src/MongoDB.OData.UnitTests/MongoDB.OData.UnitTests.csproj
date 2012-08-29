@@ -73,7 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Specification.cs" />
-    <Compile Include="TypedMongoDataServiceMetadataTests\When_mapping_a_hierarchy.cs" />
+    <Compile Include="TypedMetadataBuilderTests\When_mapping_a_hierarchy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

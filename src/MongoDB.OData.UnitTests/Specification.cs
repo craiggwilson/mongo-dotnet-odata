@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace MongoDB.OData.UnitTests
 {
-    public abstract class Specification<TSubject>
+    internal abstract class Specification<TSubject>
     {
         protected TSubject Subject { get; private set; }
 
