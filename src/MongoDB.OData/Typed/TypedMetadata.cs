@@ -11,6 +11,7 @@ namespace MongoDB.OData.Typed
         private readonly Dictionary<string, ResourceType> _types;
         private readonly Dictionary<string, ResourceType> _qualifiedTypes;
         private readonly Dictionary<ResourceType, List<ResourceType>> _derivedTypes;
+        private readonly Dictionary<string, ServiceOperation> _serviceOperations;
 
         public string ContainerName { get; private set; }
 
@@ -23,7 +24,7 @@ namespace MongoDB.OData.Typed
 
         public IEnumerable<ServiceOperation> ServiceOperations
         {
-            get { yield break; }
+            get { return _serviceOperations.Values; }
         }
 
         public IEnumerable<ResourceType> Types
@@ -31,14 +32,15 @@ namespace MongoDB.OData.Typed
             get { return _types.Values; }
         }
 
-        public TypedMetadata(string containerNamespace, string containerName, IEnumerable<ResourceSet> resourceSets, IEnumerable<ResourceType> resourceTypes)
+        public TypedMetadata(string containerNamespace, string containerName, IEnumerable<ResourceSet> resourceSets, IEnumerable<ResourceType> resourceTypes, IEnumerable<ServiceOperation> serviceOperations)
         {
             ContainerNamespace = containerNamespace ?? "MongoDB";
             ContainerName = containerName ?? "Database";
 
-            _sets = resourceSets.ToDictionary(x => x.Name, x => x);
-            _types = resourceTypes.ToDictionary(x => x.Name, x => x);
-            _qualifiedTypes = resourceTypes.ToDictionary(x => x.FullName, x => x);
+            _sets = resourceSets.ToDictionary(x => x.Name);
+            _types = resourceTypes.ToDictionary(x => x.Name);
+            _qualifiedTypes = resourceTypes.ToDictionary(x => x.FullName);
+            _serviceOperations = serviceOperations.ToDictionary(x => x.Name);
             _derivedTypes = new Dictionary<ResourceType, List<ResourceType>>();
 
             foreach (var type in resourceTypes.Where(t => t.BaseType != null))
@@ -99,8 +101,7 @@ namespace MongoDB.OData.Typed
 
         public bool TryResolveServiceOperation(string name, out ServiceOperation serviceOperation)
         {
-            serviceOperation = null;
-            return false;
+            return _serviceOperations.TryGetValue(name, out serviceOperation);
         }
     }
 }

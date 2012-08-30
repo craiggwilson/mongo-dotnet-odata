@@ -7,6 +7,7 @@ using System.ServiceModel.Web;
 using System.Web;
 using MongoDB.Driver;
 using MongoDB.OData.SampleModels.Blog;
+using MongoDB.OData.Typed;
 
 namespace MongoDB.OData.SampleHost
 {
@@ -31,11 +32,6 @@ namespace MongoDB.OData.SampleHost
             Configure(config);
             config.SetEntitySetAccessRule("*", EntitySetRights.All);
             config.UseVerboseErrors = true;
-        }
-
-        protected override BlogEntities CreateDataSource(MongoServer server)
-        {
-            return new BlogEntities();
         }
 
         protected override MongoServer CreateMongoServer()

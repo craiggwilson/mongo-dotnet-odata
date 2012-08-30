@@ -2,11 +2,12 @@
 using MongoDB.OData.Typed;
 using System;
 using System.Data.Services;
+using System.Data.Services.Common;
 using System.Data.Services.Providers;
 
 namespace MongoDB.OData
 {
-    public abstract class MongoDataService<T> : DataService<T>, IServiceProvider
+    public abstract class MongoDataService<T> : DataService<TypedDataSource>, IServiceProvider
     {
         private static object _metadataLock = new object();
         private static TypedMetadata _metadata;
@@ -15,7 +16,7 @@ namespace MongoDB.OData
         {
             config.DataServiceBehavior.AcceptProjectionRequests = false;
             config.DataServiceBehavior.AcceptSpatialLiteralsInQuery = false;
-            config.DataServiceBehavior.MaxProtocolVersion = System.Data.Services.Common.DataServiceProtocolVersion.V3;
+            config.DataServiceBehavior.MaxProtocolVersion = DataServiceProtocolVersion.V3;
         }
 
         public object GetService(Type serviceType)
@@ -34,15 +35,16 @@ namespace MongoDB.OData
             }
         }
 
-        protected sealed override T CreateDataSource()
+        protected sealed override TypedDataSource CreateDataSource()
         {
             var server = CreateMongoServer();
-            var dataSource = CreateDataSource(server);
-            InitializeDataSource(server, dataSource);
+            var dataContext = CreateDataContext(server);
+            var dataSource = new TypedDataSource(server, dataContext);
+            InitializeDataContext(dataSource);
             return dataSource;
         }
 
-        protected virtual T CreateDataSource(MongoServer server)
+        protected virtual T CreateDataContext(MongoServer server)
         {
             var ctor = typeof(T).GetConstructor(new[] { typeof(MongoServer) });
 
@@ -58,7 +60,7 @@ namespace MongoDB.OData
                 return (T)ctor.Invoke(new object[0]);
             }
 
-            throw new InvalidOperationException(string.Format("Either overload the CreateDataSource(MongoServer) method or ensure that {0} has an empty ctor or a ctor that take a single MongoServer parameter.", typeof(T)));
+            throw new InvalidOperationException(string.Format("Either overload the CreateDataContext(MongoServer) method or ensure that {0} has an empty ctor or a ctor that take a single MongoServer parameter.", typeof(T)));
         }
 
         protected abstract MongoServer CreateMongoServer();
@@ -71,8 +73,8 @@ namespace MongoDB.OData
             //    {
             //        if (_metadataProvider == null)
             //        {
-                        var builder = new TypedMetadataBuilder(typeof(T));
-                        _metadata = builder.BuildMetadata();
+            var builder = new TypedMetadataBuilder<T>();
+            _metadata = builder.BuildMetadata();
             //        }
             //    }
             //}
@@ -85,13 +87,13 @@ namespace MongoDB.OData
             return new TypedQueryProvider(GetMetadata());
         }
 
-        private void InitializeDataSource(MongoServer server, T dataSource)
+        private void InitializeDataContext(TypedDataSource dataSource)
         {
             var metadata = GetMetadata();
             foreach(var resourceSet in metadata.ResourceSets)
             {
                 var annotation = (TypedResourceSetAnnotation)resourceSet.CustomState;
-                annotation.Setter(dataSource, server);
+                annotation.SetDataContext(dataSource);
             }
         }
     }

@@ -8,15 +8,15 @@ namespace MongoDB.OData.Typed
     {
         private readonly string _collectionName;
         private readonly string _databaseName;
-        private readonly Func<object, IQueryable> _getter;
-        private readonly Action<object, MongoServer> _setter;
+        private readonly Func<TypedDataSource, IQueryable> _getQueryableRoot;
+        private readonly Action<TypedDataSource> _setDataContext;
 
-        public TypedResourceSetAnnotation(string databaseName, string collectionName, Func<object, IQueryable> getter, Action<object, MongoServer> setter)
+        public TypedResourceSetAnnotation(string databaseName, string collectionName, Func<TypedDataSource, IQueryable> getQueryableRoot, Action<TypedDataSource> setDataContext)
         {
             _collectionName = collectionName;
             _databaseName = databaseName;
-            _getter = getter;
-            _setter = setter;
+            _getQueryableRoot = getQueryableRoot;
+            _setDataContext = setDataContext ?? (_ => { });
         }
         
         public string CollectionName
@@ -29,14 +29,14 @@ namespace MongoDB.OData.Typed
             get { return _databaseName; }
         }
 
-        public Func<object, IQueryable> Getter
+        public Func<TypedDataSource, IQueryable> GetQueryableRoot
         {
-            get { return _getter; }
+            get { return _getQueryableRoot; }
         }
 
-        public Action<object, MongoServer> Setter
+        public Action<TypedDataSource> SetDataContext
         {
-            get { return _setter; }
+            get { return _setDataContext; }
         }
     }
 }

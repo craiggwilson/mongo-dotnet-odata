@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Services.Providers;
 using System.Linq;
+using System.Reflection;
 
 namespace MongoDB.OData.Typed
 {
@@ -39,7 +40,7 @@ namespace MongoDB.OData.Typed
         public IQueryable GetQueryRootForResourceSet(ResourceSet resourceSet)
         {
             var annotation = (TypedResourceSetAnnotation)resourceSet.CustomState;
-            return annotation.Getter(CurrentDataSource);
+            return annotation.GetQueryableRoot((TypedDataSource)CurrentDataSource);
         }
 
         public ResourceType GetResourceType(object target)
@@ -49,9 +50,10 @@ namespace MongoDB.OData.Typed
 
         public object InvokeServiceOperation(ServiceOperation serviceOperation, object[] parameters)
         {
-            throw new NotImplementedException();
+            var method = (MethodInfo)serviceOperation.CustomState;
+            var currentDataContext = ((TypedDataSource)CurrentDataSource).DataContext;
+
+            return method.Invoke(currentDataContext, parameters);
         }
-
-
     }
 }

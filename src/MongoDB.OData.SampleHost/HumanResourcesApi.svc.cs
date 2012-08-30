@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Services;
-using System.Data.Services.Common;
-using System.Linq;
-using System.ServiceModel.Web;
-using System.Web;
-using MongoDB.Bson.Serialization;
+﻿using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using MongoDB.OData.SampleModels.HumanResources;
-using System.Data.Services.Providers;
+using System;
+using System.Collections.Generic;
+using System.Data.Services;
+using System.Linq;
+using System.ServiceModel.Web;
 
 namespace MongoDB.OData.SampleHost
 {
@@ -55,6 +52,7 @@ namespace MongoDB.OData.SampleHost
         {
             Configure(config);
             config.SetEntitySetAccessRule("*", EntitySetRights.All);
+            config.SetServiceOperationAccessRule("*", ServiceOperationRights.AllRead);
             config.UseVerboseErrors = true;
         }
 

@@ -3,39 +3,43 @@ using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data.Services;
 using System.Data.Services.Common;
 using System.Data.Services.Providers;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.ServiceModel.Web;
 
 namespace MongoDB.OData.Typed
 {
-    internal class TypedMetadataBuilder
+    internal class TypedMetadataBuilder<T>
     {
-        private readonly Type _dataContextType;
         private readonly Dictionary<ResourceType, List<ResourceType>> _childResourceTypes;
         private readonly Dictionary<Type, ResourceType> _knownResourceTypes;
         private readonly Dictionary<string, ResourceSet> _resourceSets;
-        private readonly Queue<Tuple<BsonClassMap, ResourceType>> _unvisitedResourceTypes;
+        private readonly Dictionary<string, ServiceOperation> _serviceOperations;
+        private readonly Queue<ResourceType> _unvisitedResourceTypes;
 
-        public TypedMetadataBuilder(Type dataContextType)
+        private string _containerNamespace;
+        private string _containerName;
+
+        public TypedMetadataBuilder()
         {
-            _dataContextType = dataContextType;
             _childResourceTypes = new Dictionary<ResourceType, List<ResourceType>>();
             _knownResourceTypes = new Dictionary<Type, ResourceType>();
             _resourceSets = new Dictionary<string, ResourceSet>();
-            _unvisitedResourceTypes = new Queue<Tuple<BsonClassMap, ResourceType>>();
+            _serviceOperations = new Dictionary<string, ServiceOperation>();
+            _unvisitedResourceTypes = new Queue<ResourceType>();
+            BuildResourceSets();
+            BuildServiceOperations();
+            _containerNamespace = typeof(T).Namespace;
+            _containerName = typeof(T).Name;
         }
 
-        public TypedMetadata BuildMetadata()
+        internal TypedMetadata BuildMetadata()
         {
-            _childResourceTypes.Clear();
-            _knownResourceTypes.Clear();
-            _resourceSets.Clear();
-            _unvisitedResourceTypes.Clear();
-
-            BuildResourceSets();
+            PopulateMetadataForTypes();
 
             var resourceSets = _resourceSets.Values.Select(x =>
             {
@@ -48,48 +52,153 @@ namespace MongoDB.OData.Typed
                 return x;
             });
 
-            return new TypedMetadata(_dataContextType.Namespace, _dataContextType.Name, resourceSets, resourceTypes);
+            var serviceOperations = _serviceOperations.Values.Select(x =>
+            {
+                x.SetReadOnly();
+                return x;
+            });
+
+            return new TypedMetadata(_containerNamespace, _containerName, resourceSets, resourceTypes, serviceOperations);
         }
 
-        private void BuildResourceSets()
+        private void AddResourceSet(string resourceSetName, Type documentType, TypedResourceSetAnnotation annotation)
         {
-            var queryRootProperties = GetCollectionProperties(_dataContextType);
-
-            var globalDatabaseName = GetMongoDatabaseName(_dataContextType) ?? _dataContextType.Name;
-            foreach (var queryRootProperty in queryRootProperties)
+            if (_resourceSets.ContainsKey(resourceSetName))
             {
-                var documentType = GetMongoCollectionElementType(queryRootProperty.PropertyType);
+                throw new InvalidOperationException(string.Format("A resource set with the name {0} already exists.", resourceSetName));
+            }
 
-                var resourceType = BuildHierarchyForType(documentType, ResourceTypeKind.EntityType);
-                if (resourceType == null)
-                {
-                    throw new InvalidOperationException(string.Format("Property {0} is an invalid container property.", queryRootProperty));
-                }
+            var resourceType = BuildHierarchyForType(documentType, ResourceTypeKind.EntityType);
+            if (resourceType == null)
+            {
+                throw new InvalidOperationException(string.Format("Type {0} is an invalid container.", documentType));
+            }
 
-                foreach (var resourceSet in _resourceSets.Values)
+            foreach (var resourceSet in _resourceSets.Values)
+            {
+                var instanceType = resourceSet.ResourceType.InstanceType;
+                if (!instanceType.IsAssignableFrom(documentType))
                 {
-                    var instanceType = resourceSet.ResourceType.InstanceType;
-                    if (!instanceType.IsAssignableFrom(documentType))
+                    if (!documentType.IsAssignableFrom(instanceType))
                     {
-                        if (!documentType.IsAssignableFrom(instanceType))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        throw new InvalidOperationException(string.Format("There are multiple MongoCollection Properties for the same type hierarchy including type {0}.", documentType));
+                    throw new InvalidOperationException(string.Format("There are multiple MongoCollection Properties for the same type hierarchy including type {0}.", documentType));
+                }
+                else
+                {
+                    throw new InvalidOperationException(string.Format("There are multiple MongoCollection Properties for the same type hierarchy including type {0}.", documentType));
+                }
+            }
+
+            var newResourceSet = new ResourceSet(resourceSetName, resourceType);
+            newResourceSet.CustomState = annotation;
+            _resourceSets.Add(newResourceSet.Name, newResourceSet);
+        }
+
+        private void AddServiceOperation(MethodInfo method, string protocol, object customState)
+        {
+            ServiceOperationResultKind resultKind;
+            Type returnType;
+            ResourceType returnResourceType;
+
+            if (_serviceOperations.ContainsKey(method.Name))
+            {
+                throw new InvalidOperationException(string.Format("A service operation with the name {0} already exists.", method.Name));
+            }
+
+            if (method.ReturnType == typeof(void))
+            {
+                resultKind = ServiceOperationResultKind.Void;
+                returnResourceType = null;
+            }
+            else
+            {
+                bool hasSingleResult = GetSingleAttribute<SingleResultAttribute>(method) != null;
+                var queryableElementType = GetGenericElementType(method.ReturnType, typeof(IQueryable<>));
+                if (queryableElementType == null)
+                {
+                    var enumerableElementType = GetGenericElementType(method.ReturnType, typeof(IEnumerable<>));
+                    if (enumerableElementType == null)
+                    {
+                        returnType = method.ReturnType;
+                        resultKind = ServiceOperationResultKind.DirectValue;
                     }
                     else
                     {
-                        throw new InvalidOperationException(string.Format("There are multiple MongoCollection Properties for the same type hierarchy including type {0}.", documentType));
+                        returnType = enumerableElementType;
+                        resultKind = ServiceOperationResultKind.Enumeration;
+                        if (hasSingleResult)
+                        {
+                            throw new InvalidOperationException(string.Format("Method {0} has a return type of IEnumerable which cannot have a SingleResultAttribute applied.", method.Name));
+                        }
                     }
                 }
-
-                var newResourceSet = new ResourceSet(queryRootProperty.Name, resourceType);
-                newResourceSet.CustomState = CreateResourceSetAnnotation(globalDatabaseName, resourceType.InstanceType, _dataContextType, queryRootProperty);
-                _resourceSets.Add(newResourceSet.Name, newResourceSet);
+                else
+                {
+                    returnType = queryableElementType;
+                    if (hasSingleResult)
+                    {
+                        resultKind = ServiceOperationResultKind.QueryWithSingleResult;
+                    }
+                    else
+                    {
+                        resultKind = ServiceOperationResultKind.QueryWithMultipleResults;
+                    }
+                }
+                returnResourceType = ResourceType.GetPrimitiveResourceType(returnType);
+                if (returnResourceType == null)
+                {
+                    if (!_knownResourceTypes.TryGetValue(returnType, out returnResourceType))
+                    {
+                        returnResourceType = BuildHierarchyForType(returnType, ResourceTypeKind.ComplexType);
+                    }
+                }
             }
 
-            PopulateMetadataForTypes();
+            var parameters = method.GetParameters();
+            var serviceOperationParameters = new ServiceOperationParameter[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                if (parameter.IsOut || parameter.IsRetval)
+                {
+                    throw new InvalidOperationException(string.Format("Method {0} has Out or Retval parameters which cannot be used in ServiceOperations.", method.Name));
+                }
+
+                var parameterResourceType = ResourceType.GetPrimitiveResourceType(parameter.ParameterType);
+                if (parameterResourceType == null)
+                {
+                    throw new InvalidOperationException(string.Format("Method {0} has a parameter of type {1} which cannot be used in a ServiceOperation.  Only primitive types are allowed as parameters.", method.Name, parameter.ParameterType.Name));
+                }
+
+                var parameterName = parameter.Name ?? "p" + i;
+                serviceOperationParameters[i] = new ServiceOperationParameter(parameterName, parameterResourceType);
+            }
+
+            ResourceSet resourceSet = null;
+            foreach (var set in _resourceSets.Values)
+            {
+                if (set.ResourceType.InstanceType.IsAssignableFrom(returnResourceType.InstanceType))
+                {
+                    resourceSet = set;
+                    break;
+                }
+            }
+
+            if (returnResourceType == null || returnResourceType.ResourceTypeKind != ResourceTypeKind.EntityType || resourceSet != null)
+            {
+                var serviceOperation = new ServiceOperation(method.Name, resultKind, returnResourceType, resourceSet, protocol, serviceOperationParameters);
+                serviceOperation.CustomState = method;
+                var mimeTypeAttribute = GetSingleAttribute<MimeTypeAttribute>(method);
+                if (mimeTypeAttribute != null)
+                {
+                    serviceOperation.MimeType = mimeTypeAttribute.MimeType;
+                }
+
+                _serviceOperations.Add(serviceOperation.Name, serviceOperation);
+            }
         }
 
         private ResourceType BuildHierarchyForType(Type type, ResourceTypeKind kind)
@@ -125,8 +234,10 @@ namespace MongoDB.OData.Typed
 
             for (int i = maps.Count - 1; i >= 0; i--)
             {
-                entityResourceType = CreateResourceType(maps[i], kind, entityResourceType);
+                entityResourceType = CreateResourceType(maps[i].ClassType, kind, entityResourceType);
             }
+
+            PopulateMetadataForTypes();
 
             return entityResourceType;
         }
@@ -142,6 +253,22 @@ namespace MongoDB.OData.Typed
                     var attribute = attributes[i];
                     resourceType.AddEntityPropertyMappingAttribute(attribute);
                 }
+            }
+        }
+
+        private void BuildResourceSets()
+        {
+            var dataContextType = typeof(T);
+            var queryRootProperties = GetDataContextProperties(dataContextType);
+
+            var globalDatabaseName = GetMongoDatabaseName(dataContextType) ?? dataContextType.Name;
+            foreach (var queryRootProperty in queryRootProperties)
+            {
+                var documentType = GetMongoCollectionElementType(queryRootProperty.PropertyType);
+
+                var annotation = CreateResourceSetAnnotation(globalDatabaseName, documentType, queryRootProperty);
+
+                AddResourceSet(queryRootProperty.Name, documentType, annotation);
             }
         }
 
@@ -179,12 +306,30 @@ namespace MongoDB.OData.Typed
             }
         }
 
-        private ResourceType CreateResourceType(BsonClassMap classMap, ResourceTypeKind kind, ResourceType baseType)
+        private void BuildServiceOperations()
         {
-            var type = classMap.ClassType;
+            foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (GetSingleAttribute<WebGetAttribute>(method) != null)
+                {
+                    AddServiceOperation(method, "GET", method);
+                }
+                else
+                {
+                    var webInvoke = GetSingleAttribute<WebInvokeAttribute>(method);
+                    if (webInvoke != null)
+                    {
+                        AddServiceOperation(method, webInvoke.Method, method);
+                    }
+                }
+            }
+        }
+
+        private ResourceType CreateResourceType(Type type, ResourceTypeKind kind, ResourceType baseType)
+        {
             var resourceType = new ResourceType(type, kind, baseType, type.Namespace, GetResourceTypeName(type), type.IsAbstract);
             resourceType.IsOpenType = false;
-            _knownResourceTypes.Add(classMap.ClassType, resourceType);
+            _knownResourceTypes.Add(type, resourceType);
             _childResourceTypes.Add(resourceType, null);
             if (baseType != null)
             {
@@ -195,7 +340,7 @@ namespace MongoDB.OData.Typed
                 _childResourceTypes[baseType].Add(resourceType);
             }
 
-            _unvisitedResourceTypes.Enqueue(Tuple.Create(classMap, resourceType));
+            _unvisitedResourceTypes.Enqueue(resourceType);
             return resourceType;
         }
 
@@ -251,40 +396,49 @@ namespace MongoDB.OData.Typed
         {
             while (_unvisitedResourceTypes.Count > 0)
             {
-                var tuple = _unvisitedResourceTypes.Dequeue();
-                BuildResourceTypeProperties(tuple.Item1, tuple.Item2);
-                BuildReflectionEpmInfo(tuple.Item2);
+                var resourceType = _unvisitedResourceTypes.Dequeue();
+                var classMap = BsonClassMap.LookupClassMap(resourceType.InstanceType);
+                BuildResourceTypeProperties(classMap, resourceType);
+                BuildReflectionEpmInfo(resourceType);
 
-                var knownTypes = tuple.Item1.KnownTypes;
+                var knownTypes = classMap.KnownTypes;
                 foreach(var knownType in knownTypes)
                 {
                     if (!_knownResourceTypes.ContainsKey(knownType))
                     {
-                        BuildHierarchyForType(knownType, tuple.Item2.ResourceTypeKind);
+                        BuildHierarchyForType(knownType, resourceType.ResourceTypeKind);
                     }
                 }
             }
         }
 
-        private static TypedResourceSetAnnotation CreateResourceSetAnnotation(string globalDatabaseName, Type instanceType, Type dataContextType, PropertyInfo propertyInfo)
+        private static TypedResourceSetAnnotation CreateResourceSetAnnotation(string globalDatabaseName, Type documentType, PropertyInfo propertyInfo)
         {
             var databaseName = GetMongoDatabaseName(propertyInfo) ?? globalDatabaseName;
             var collectionName = GetMongoCollectionName(propertyInfo) ?? propertyInfo.Name;
-            
-            var dataContextParameter = Expression.Parameter(typeof(object));
-            var getter = Expression.Lambda<Func<object, IQueryable>>(
-                Expression.Call(
-                    typeof(LinqExtensionMethods).GetMethod("AsQueryable", new[] { typeof(MongoCollection) }).MakeGenericMethod(instanceType),
-                    Expression.Property(
-                        Expression.Convert(dataContextParameter, dataContextType),
-                        propertyInfo)),
-                dataContextParameter).Compile();
 
-            dataContextParameter = Expression.Parameter(typeof(object));
-            var serverParameter = Expression.Parameter(typeof(MongoServer));
+            var dataContextPropertyInfo = typeof(TypedDataSource).GetProperty("DataContext");
+            var mongoServerPropertyInfo = typeof(TypedDataSource).GetProperty("Server");
+
+            var dataSourceParameter = Expression.Parameter(typeof(TypedDataSource));
+            var getter = Expression.Lambda<Func<TypedDataSource, IQueryable>>(
+                Expression.Call(
+                    typeof(LinqExtensionMethods).GetMethod("AsQueryable", new[] { typeof(MongoCollection) }).MakeGenericMethod(documentType),
+                    Expression.Property(
+                        Expression.Convert(
+                            Expression.Property(
+                                dataSourceParameter,
+                                dataContextPropertyInfo),
+                            typeof(T)),
+                        propertyInfo)),
+                dataSourceParameter).Compile();
+
+            dataSourceParameter = Expression.Parameter(typeof(TypedDataSource));
 
             var getDatabase = Expression.Call(
-                serverParameter,
+                Expression.Property(
+                    dataSourceParameter,
+                    mongoServerPropertyInfo),
                 "GetDatabase",
                 Type.EmptyTypes,
                 Expression.Constant(databaseName));
@@ -292,21 +446,24 @@ namespace MongoDB.OData.Typed
             var getCollection = Expression.Call(
                 getDatabase,
                 "GetCollection",
-                new[] { instanceType },
+                new[] { documentType },
                 Expression.Constant(collectionName));
 
-            var setter = Expression.Lambda<Action<object, MongoServer>>(
+            var setter = Expression.Lambda<Action<TypedDataSource>>(
                 Expression.Call(
-                    Expression.Convert(dataContextParameter, dataContextType),
+                    Expression.Convert(
+                        Expression.Property(
+                            dataSourceParameter,
+                            dataContextPropertyInfo),
+                        typeof(T)),
                     propertyInfo.GetSetMethod(true),
                     getCollection),
-                dataContextParameter,
-                serverParameter).Compile();
+                dataSourceParameter).Compile();
 
             return new TypedResourceSetAnnotation(databaseName, collectionName, getter, setter);
         }
 
-        private static IEnumerable<PropertyInfo> GetCollectionProperties(Type dataContextType)
+        private static IEnumerable<PropertyInfo> GetDataContextProperties(Type dataContextType)
         {
             return dataContextType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.CanRead
@@ -316,20 +473,20 @@ namespace MongoDB.OData.Typed
                     && p.PropertyType.GetGenericTypeDefinition() == typeof(MongoCollection<>));
         }
 
-        private static Type GetMongoCollectionElementType(Type mongoCollectionType)
+        private static Type GetGenericElementType(Type enumerableType, Type genericTypeDefinition)
         {
-            return mongoCollectionType.GetGenericArguments()[0];
-        }
-
-        private static string GetMongoDatabaseName(MemberInfo memberInfo)
-        {
-            var attribute = GetSingleAttribute<MongoDatabaseAttribute>(memberInfo);
-            if (attribute != null)
+            var @interface = enumerableType.GetInterfaces().SingleOrDefault(f => f.IsGenericType && f.GetGenericTypeDefinition() == genericTypeDefinition);
+            if (@interface != null)
             {
-                return attribute.Name;
+                return @interface.GetGenericArguments()[0];
             }
 
             return null;
+        }
+
+        private static Type GetMongoCollectionElementType(Type mongoCollectionType)
+        {
+            return mongoCollectionType.GetGenericArguments()[0];
         }
 
         private static string GetMongoCollectionName(PropertyInfo propertyInfo)
@@ -343,15 +500,25 @@ namespace MongoDB.OData.Typed
             return null;
         }
 
+        private static string GetMongoDatabaseName(MemberInfo memberInfo)
+        {
+            var attribute = GetSingleAttribute<MongoDatabaseAttribute>(memberInfo);
+            if (attribute != null)
+            {
+                return attribute.Name;
+            }
+
+            return null;
+        }
+
         private static string GetResourceTypeName(Type type)
         {
             return type.Name;
         }
 
-        private static T GetSingleAttribute<T>(MemberInfo member) where T : Attribute
+        protected static T GetSingleAttribute<T>(MemberInfo member) where T : Attribute
         {
             return (T)member.GetCustomAttributes(typeof(T), false).SingleOrDefault();
         }
-
     }
 }
