@@ -72,6 +72,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\GlobalAssemblyInfo.cs">
+      <Link>Properties\GlobalAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Specification.cs" />
     <Compile Include="TypedMetadataBuilderTests\When_mapping_a_hierarchy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

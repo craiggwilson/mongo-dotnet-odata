@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.IntegrationTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.OData.UnitTests", "src\MongoDB.OData.UnitTests\MongoDB.OData.UnitTests.csproj", "{079AA188-5BA0-437F-AAA2-3F4681393A15}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CA64904B-9F5A-4FA0-9787-ED5D1376E0B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,5 +82,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D9B7A239-9F4E-4E55-838D-4766EBEA5672} = {CA64904B-9F5A-4FA0-9787-ED5D1376E0B8}
+		{59DA97A0-8CD9-461C-9EA5-1AE45D34A1A7} = {CA64904B-9F5A-4FA0-9787-ED5D1376E0B8}
 	EndGlobalSection
 EndGlobal

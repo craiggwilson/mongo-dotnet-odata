@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>MongoDB.OData</id>
+    <title>MongoDB.OData</title>
+    <version>0.0.0</version>
+    <authors>Craig Wilson</authors>
+    <owners>Craig Wilson</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/craiggwilson/mongo-dotnet-odata</projectUrl>
+    <iconUrl>http://jobs.mongodb.org/files/logos/889002/889002.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>"OData provider backed by MongoDB"</description>
+    <tags>mongodb mongo odata wcf</tags>
+    <dependencies>
+      <dependency id="FluentAssertions"/>
+      <dependency id="Microsoft.Data.Edm"/>
+      <dependency id="Microsoft.Data.OData"/>
+      <dependency id="Microsoft.Data.Services"/>
+      <dependency id="Microsoft.Data.Services.Client"/>
+      <dependency id="mongocsharpdriver"/>
+      <dependency id="NUnit"/>
+      <dependency id="System.Spatial"/>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="artifacts\build\MongoDB.OData.dll" target="lib\4.0" />
+    <file src="artifacts\build\MongoDB.OData.xml" target="lib\4.0" />
+    <file src="artifacts\build\MongoDB.OData.pdb" target="lib\4.0" />
+  </files>
+</package>

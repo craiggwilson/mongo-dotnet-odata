@@ -40,6 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\GlobalAssemblyInfo.cs">
+      <Link>Properties\GlobalAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Blog\Blog.cs" />
     <Compile Include="Blog\BlogPostSummary.cs" />
     <Compile Include="Blog\Comment.cs" />

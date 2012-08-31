@@ -11,3 +11,6 @@ packages
 
 # NCrunch
 *.ncrunch*
+
+#other
+artifacts
