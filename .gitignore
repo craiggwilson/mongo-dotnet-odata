@@ -8,6 +8,7 @@ TestResults
 
 # Nuget
 packages
+NuGet.config
 
 # NCrunch
 *.ncrunch*

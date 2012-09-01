@@ -516,9 +516,9 @@ namespace MongoDB.OData.Typed
             return type.Name;
         }
 
-        protected static T GetSingleAttribute<T>(MemberInfo member) where T : Attribute
+        private static TAttribute GetSingleAttribute<TAttribute>(MemberInfo member) where TAttribute : Attribute
         {
-            return (T)member.GetCustomAttributes(typeof(T), false).SingleOrDefault();
+            return (TAttribute)member.GetCustomAttributes(typeof(TAttribute), false).SingleOrDefault();
         }
     }
 }

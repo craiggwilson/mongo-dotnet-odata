@@ -1,22 +1,22 @@
 Properties {
 	$base_dir = Split-Path $psake.build_script_file	
-	$artifacts_dir = "$base_dir\artifacts\"
-	$build_dir = "$artifacts_dir\build\"
-	$package_dir = "$artifacts_dir\packages\"
-	$src_dir = "$base_dir\src\"
-	$tools_dir = "$base_dir\tools\"
-	$nuget_file = "$tools_dir\nuget\nuget.exe"
-	$nunit_file = "$tools_dir\nunit\nunit-console.exe"
+	$artifacts_dir = "$base_dir\artifacts"
+	$build_dir = "$artifacts_dir\build"
+	$package_dir = "$artifacts_dir\packages"
+	$src_dir = "$base_dir\src"
+	$tools_dir = "$base_dir\tools"
 	$sln_file = "$base_dir\MongoDB.OData.sln"
 	$asm_file = "$src_dir\GlobalAssemblyInfo.cs"
 	$nuspec_file = "$base_dir\MongoDB.OData.nuspec"
 
-	$version = "0.1.0.0"
-	$sem_version = "0.1"
+	$nuget_tool = "$tools_dir\nuget\nuget.exe"
+
+	$version = "0.1.1.0"
+	$sem_version = "0.1.1"
 	$config = "Release"
 }
 
-$framework = '4.0'
+Framework("4.0")
 
 include .\psake_ext.ps1
 
@@ -49,8 +49,12 @@ Task Build -Depends Init {
 	Exec { msbuild "$sln_file" /t:Build /p:Configuration=Release /v:quiet /p:OutDir=$build_dir } 
 }
 
-task Package -depends Build {
+task Package -Depends Build {
 	mkdir -p $package_dir
 
-	& $nuget_file pack $nuspec_file -o $package_dir -Version $sem_version -Symbols -BasePath $base_dir
+	&$nuget_tool pack $nuspec_file -o $package_dir -Version $sem_version -Symbols -BasePath $base_dir
+}
+
+task Publish -Depends Package {
+	&$nuget_tool push "$package_dir\MongoDB.OData.$sem_version.nupkg"
 }

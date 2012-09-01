@@ -13,19 +13,20 @@
     <description>"OData provider backed by MongoDB"</description>
     <tags>mongodb mongo odata wcf</tags>
     <dependencies>
-      <dependency id="FluentAssertions"/>
-      <dependency id="Microsoft.Data.Edm"/>
-      <dependency id="Microsoft.Data.OData"/>
-      <dependency id="Microsoft.Data.Services"/>
-      <dependency id="Microsoft.Data.Services.Client"/>
-      <dependency id="mongocsharpdriver"/>
-      <dependency id="NUnit"/>
-      <dependency id="System.Spatial"/>
+      <dependency id="FluentAssertions" version="1.7.1.1" />
+      <dependency id="Microsoft.Data.Edm" version="5.0.2" />
+      <dependency id="Microsoft.Data.OData" version="5.0.2" />
+      <dependency id="Microsoft.Data.Services" version="5.0.2" />
+      <dependency id="Microsoft.Data.Services.Client" version="5.0.2" />
+      <dependency id="mongocsharpdriver" version="1.6"/>
+      <dependency id="NUnit" version="2.6.1"/>
+      <dependency id="System.Spatial" version="5.0.2"/>
     </dependencies>
   </metadata>
   <files>
     <file src="artifacts\build\MongoDB.OData.dll" target="lib\4.0" />
     <file src="artifacts\build\MongoDB.OData.xml" target="lib\4.0" />
     <file src="artifacts\build\MongoDB.OData.pdb" target="lib\4.0" />
+    <file src="src\**\*.cs" target="src" />
   </files>
 </package>
