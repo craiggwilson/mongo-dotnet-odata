@@ -11,8 +11,8 @@ Properties {
 
 	$nuget_tool = "$tools_dir\nuget\nuget.exe"
 
-	$version = "0.1.1.0"
-	$sem_version = "0.1.1"
+	$version = "0.1.2.0"
+	$sem_version = "0.1.2"
 	$config = "Release"
 }
 

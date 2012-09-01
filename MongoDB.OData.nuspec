@@ -13,13 +13,11 @@
     <description>"OData provider backed by MongoDB"</description>
     <tags>mongodb mongo odata wcf</tags>
     <dependencies>
-      <dependency id="FluentAssertions" version="1.7.1.1" />
       <dependency id="Microsoft.Data.Edm" version="5.0.2" />
       <dependency id="Microsoft.Data.OData" version="5.0.2" />
       <dependency id="Microsoft.Data.Services" version="5.0.2" />
       <dependency id="Microsoft.Data.Services.Client" version="5.0.2" />
       <dependency id="mongocsharpdriver" version="1.6"/>
-      <dependency id="NUnit" version="2.6.1"/>
       <dependency id="System.Spatial" version="5.0.2"/>
     </dependencies>
   </metadata>
