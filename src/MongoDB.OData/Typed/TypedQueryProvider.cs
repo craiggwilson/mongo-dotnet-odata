@@ -24,17 +24,17 @@ namespace MongoDB.OData.Typed
 
         public object GetOpenPropertyValue(object target, string propertyName)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IEnumerable<KeyValuePair<string, object>> GetOpenPropertyValues(object target)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public object GetPropertyValue(object target, ResourceProperty resourceProperty)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IQueryable GetQueryRootForResourceSet(ResourceSet resourceSet)

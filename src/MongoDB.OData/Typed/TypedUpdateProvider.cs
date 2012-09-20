@@ -29,7 +29,7 @@ namespace MongoDB.OData.Typed
 
         public void AddReferenceToCollection(object targetResource, string propertyName, object resourceToBeAdded)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void ClearChanges()
@@ -114,7 +114,7 @@ namespace MongoDB.OData.Typed
 
         public void RemoveReferenceFromCollection(object targetResource, string propertyName, object resourceToBeRemoved)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public object ResetResource(object targetResource)
@@ -132,7 +132,6 @@ namespace MongoDB.OData.Typed
 
         public object ResolveResource(object resource)
         {
-            //we are passed the value we returned from GetResource
             return resource;
         }
 
@@ -143,12 +142,12 @@ namespace MongoDB.OData.Typed
 
         public void SetConcurrencyValues(object resourceCookie, bool? checkForEquality, IEnumerable<KeyValuePair<string, object>> concurrencyValues)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void SetReference(object targetResource, string propertyName, object propertyValue)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void SetValue(object targetResource, string propertyName, object propertyValue)

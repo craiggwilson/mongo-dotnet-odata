@@ -6,7 +6,7 @@ using System.Text;
 
 namespace MongoDB.OData.Typed
 {
-    public class TypedResourceTypeAnnotation
+    internal class TypedResourceTypeAnnotation
     {
         private readonly BsonClassMap _classMap;
 

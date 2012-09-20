@@ -75,7 +75,7 @@ namespace MongoDB.OData.Typed
 
         public ResourceAssociationSet GetResourceAssociationSet(ResourceSet resourceSet, ResourceType resourceType, ResourceProperty resourceProperty)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public bool HasDerivedTypes(ResourceType resourceType)
