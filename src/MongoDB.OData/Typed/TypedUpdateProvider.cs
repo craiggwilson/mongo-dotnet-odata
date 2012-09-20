@@ -1,8 +1,10 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Services.Providers;
 using System.Linq;
@@ -48,8 +50,10 @@ namespace MongoDB.OData.Typed
             var instance = annotation.ClassMap.CreateInstance();
 
             var collection = GetCollection(resourceType);
-
-            _actions.Add(() => collection.Insert(resourceType.InstanceType, instance));
+            if (collection != null)
+            {
+                _actions.Add(() => collection.Insert(resourceType.InstanceType, instance));
+            }
             _rememberedInstances.Add(instance);
 
             return instance;
@@ -152,6 +156,18 @@ namespace MongoDB.OData.Typed
             var resourceType = GetResourceType(targetResource);
             var annotation = (TypedResourceTypeAnnotation)resourceType.CustomState;
             var memberMap = annotation.ClassMap.GetMemberMap(propertyName);
+            var serializer = memberMap.GetSerializer(memberMap.MemberType) as IBsonArraySerializer;
+            if (serializer != null)
+            {
+                var itemSerializationInfo = serializer.GetItemSerializationInfo();
+                var array = itemSerializationInfo.SerializeValues((IEnumerable)propertyValue);
+                var memberMapSerializationInfo = new BsonSerializationInfo(memberMap.ElementName,
+                    serializer,
+                    memberMap.MemberType,
+                    memberMap.SerializationOptions);
+
+                propertyValue = memberMapSerializationInfo.DeserializeValue(array);
+            }
             memberMap.Setter(targetResource, propertyValue);
             if (_rememberedInstances.Contains(targetResource))
             {
@@ -170,7 +186,12 @@ namespace MongoDB.OData.Typed
                 resourceType = resourceType.BaseType;
             }
 
-            var resourceSet = _metadata.ResourceSets.Single(x => x.ResourceType == resourceType);
+            var resourceSet = _metadata.ResourceSets.SingleOrDefault(x => x.ResourceType == resourceType);
+            if (resourceSet == null)
+            {
+                return null;
+            }
+
             var state = (TypedResourceSetAnnotation)resourceSet.CustomState;
             return state.GetCollection(_currentDataSource);
         }
