@@ -398,6 +398,7 @@ namespace MongoDB.OData.Typed
             {
                 var resourceType = _unvisitedResourceTypes.Dequeue();
                 var classMap = BsonClassMap.LookupClassMap(resourceType.InstanceType);
+                resourceType.CustomState = new TypedResourceTypeAnnotation(classMap);
                 BuildResourceTypeProperties(classMap, resourceType);
                 BuildReflectionEpmInfo(resourceType);
 
@@ -421,7 +422,7 @@ namespace MongoDB.OData.Typed
             var mongoServerPropertyInfo = typeof(TypedDataSource).GetProperty("Server");
 
             var dataSourceParameter = Expression.Parameter(typeof(TypedDataSource));
-            var getter = Expression.Lambda<Func<TypedDataSource, IQueryable>>(
+            var getQueryable = Expression.Lambda<Func<TypedDataSource, IQueryable>>(
                 Expression.Call(
                     typeof(LinqExtensionMethods).GetMethod("AsQueryable", new[] { typeof(MongoCollection) }).MakeGenericMethod(documentType),
                     Expression.Property(
@@ -449,6 +450,10 @@ namespace MongoDB.OData.Typed
                 new[] { documentType },
                 Expression.Constant(collectionName));
 
+            var collectionGetter = Expression.Lambda<Func<TypedDataSource, MongoCollection>>(
+                getCollection,
+                dataSourceParameter).Compile();
+
             var setter = Expression.Lambda<Action<TypedDataSource>>(
                 Expression.Call(
                     Expression.Convert(
@@ -460,7 +465,7 @@ namespace MongoDB.OData.Typed
                     getCollection),
                 dataSourceParameter).Compile();
 
-            return new TypedResourceSetAnnotation(databaseName, collectionName, getter, setter);
+            return new TypedResourceSetAnnotation(databaseName, collectionName, collectionGetter, getQueryable, setter);
         }
 
         private static IEnumerable<PropertyInfo> GetDataContextProperties(Type dataContextType)

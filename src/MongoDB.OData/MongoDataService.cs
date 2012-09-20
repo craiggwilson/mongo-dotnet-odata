@@ -44,6 +44,10 @@ namespace MongoDB.OData
             {
                 return GetQueryProvider();
             }
+            else if (serviceType == typeof(IDataServiceUpdateProvider))
+            {
+                return GetUpdateProvider();
+            }
             else
             {
                 return null;
@@ -114,6 +118,11 @@ namespace MongoDB.OData
         private TypedQueryProvider GetQueryProvider()
         {
             return new TypedQueryProvider(GetMetadata());
+        }
+
+        private TypedUpdateProvider GetUpdateProvider()
+        {
+            return new TypedUpdateProvider(CurrentDataSource, GetMetadata());
         }
 
         private void InitializeDataContext(TypedDataSource dataSource)
