@@ -346,7 +346,7 @@ namespace MongoDB.OData.Typed
 
         private ResourceType GetPropertyResourceType(BsonMemberMap memberMap)
         {
-            var serializer = memberMap.GetSerializer(memberMap.MemberType);
+            var serializer = memberMap.GetSerializer();
             return GetNonEntityResourceType(memberMap.MemberType, serializer);
         }
 
@@ -366,11 +366,15 @@ namespace MongoDB.OData.Typed
             var arraySerializer = serializer as IBsonArraySerializer;
             if (arraySerializer != null)
             {
-                var options = arraySerializer.GetItemSerializationInfo();
-                var elementType = options.NominalType;
-                var elementTypeSerializer = options.Serializer;
-                var elementResourceType = GetNonEntityResourceType(elementType, elementTypeSerializer);
-                return ResourceType.GetCollectionResourceType(elementResourceType);
+                BsonSerializationInfo options;
+                if (arraySerializer.TryGetItemSerializationInfo(out options))
+                {
+                    var elementType = options.NominalType;
+                    var elementTypeSerializer = options.Serializer;
+                    var elementResourceType = GetNonEntityResourceType(elementType, elementTypeSerializer);
+                    return ResourceType.GetCollectionResourceType(elementResourceType);
+                }
+                return null;
             }
 
             var primitiveResourceType = ResourceType.GetPrimitiveResourceType(type);

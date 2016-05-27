@@ -36,7 +36,8 @@ namespace MongoDB.OData.SampleHost
 
         protected override MongoServer CreateMongoServer()
         {
-            var server = MongoServer.Create();
+            var mongoServerSettings = new MongoServerSettings();
+            var server = new MongoServer(mongoServerSettings);
 
             //create data if none exists...
             var db = server.GetDatabase("odata_blogs");
