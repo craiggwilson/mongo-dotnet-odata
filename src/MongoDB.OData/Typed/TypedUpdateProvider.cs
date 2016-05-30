@@ -66,13 +66,13 @@ namespace MongoDB.OData.Typed
             var annotation = (TypedResourceTypeAnnotation)resourceType.CustomState;
 
             var idValue = annotation.ClassMap.IdMemberMap.Getter(targetResource);
-            var idSerializer = annotation.ClassMap.IdMemberMap.GetSerializer(idValue.GetType());
+            var idSerializer = annotation.ClassMap.IdMemberMap.GetSerializer();
             var doc = new BsonDocument();
-            using (var writer = BsonWriter.Create(doc))
+            using (var writer = new BsonDocumentWriter(doc))
             {
                 writer.WriteStartDocument();
                 writer.WriteName("_id");
-                idSerializer.Serialize(writer, annotation.ClassMap.IdMemberMap.MemberType, idValue, annotation.ClassMap.IdMemberMap.SerializationOptions);
+                idSerializer.Serialize(BsonSerializationContext.CreateRoot(writer), idValue);
                 writer.WriteEndDocument();
             }
 
@@ -156,17 +156,18 @@ namespace MongoDB.OData.Typed
             var resourceType = GetResourceType(targetResource);
             var annotation = (TypedResourceTypeAnnotation)resourceType.CustomState;
             var memberMap = annotation.ClassMap.GetMemberMap(propertyName);
-            var serializer = memberMap.GetSerializer(memberMap.MemberType) as IBsonArraySerializer;
+            var serializer = memberMap.GetSerializer() as IBsonArraySerializer;
             if (serializer != null)
             {
-                var itemSerializationInfo = serializer.GetItemSerializationInfo();
-                var array = itemSerializationInfo.SerializeValues((IEnumerable)propertyValue);
-                var memberMapSerializationInfo = new BsonSerializationInfo(memberMap.ElementName,
-                    serializer,
-                    memberMap.MemberType,
-                    memberMap.SerializationOptions);
-
-                propertyValue = memberMapSerializationInfo.DeserializeValue(array);
+                BsonSerializationInfo itemSerializationInfo;
+                if (serializer.TryGetItemSerializationInfo(out itemSerializationInfo))
+                {
+                    var array = itemSerializationInfo.SerializeValues((IEnumerable)propertyValue);
+                    var memberMapSerializationInfo = new BsonSerializationInfo(memberMap.ElementName,
+                        serializer,
+                        memberMap.MemberType);
+                    propertyValue = memberMapSerializationInfo.DeserializeValue(array);
+                }
             }
             memberMap.Setter(targetResource, propertyValue);
             if (_rememberedInstances.Contains(targetResource))
